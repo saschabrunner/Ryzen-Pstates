@@ -19,18 +19,15 @@ int main() {
 	Rdmsr(0xC0010064, &eax, &edx);
 
 	uint64_t pstate = eax | ((uint64_t)edx << 32);
+	PowerState powerState(pstate);
 
-	int fid = pstate & 0xff;
-	int did = (pstate & 0x3f00) >> 8;
-	int vid = (pstate & 0x3fc000) >> 14;
-	double ratio = (25.0 * fid) / (12.5 * did);
-	double vcore = 1.55 - (0.00625 * vid);
+	powerState.print();
 
-	std::cout << "FID: " << fid
-		<< "\nDID: " << did
-		<< "\nVID: " << vid
-		<< "\nRatio: " << ratio
-		<< "\nVCore: " << vcore << std::endl;
+	// change the power state and print the changes
+	powerState.setFid(110);
+	powerState.setDid(12);
+	powerState.setVid(93);
+	powerState.print();
 
 	DeinitializeOls();
 
