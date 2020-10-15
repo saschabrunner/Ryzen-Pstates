@@ -18,11 +18,19 @@ public:
 	double calculateFrequency() const;
 	static double calculateFrequency(uint8_t fid, uint8_t did);
 
-	void setFid(uint8_t fid);
-	void setDid(uint8_t did);
-	void setVid(uint8_t vid);
+	bool setFid(uint8_t fid);
+	bool setDid(uint8_t did);
+	bool setVid(uint8_t vid);
 
 	void print();
+
+	// some sane limits for all the values
+	static constexpr uint8_t FID_MIN{ 16 };
+	static constexpr uint8_t FID_MAX{ 255 };
+	static constexpr uint8_t DID_MIN{ 8 };
+	static constexpr uint8_t DID_MAX{ 44 };
+	static constexpr uint8_t VID_MIN{ 32 }; // 1.35V
+	static constexpr uint8_t VID_MAX{ 168 }; // 0.5V
 
 private:
 	uint64_t pstate;
