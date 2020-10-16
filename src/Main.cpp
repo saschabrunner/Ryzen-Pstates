@@ -1,13 +1,19 @@
-#include <cstdint>
+﻿#include <cstdint>
 #include <iostream>
 
 #include <Windows.h>
 #include "lib/OlsApi.h"
 
+#include "Cpuid.h"
 #include "PowerState.h"
 
 
 int main() {
+	if (!validateCpu())
+	{
+		return -1;
+	}
+
 	if (!InitializeOls())
 	{
 		std::cerr << "Failed to initialize WinRing0" << std::endl;

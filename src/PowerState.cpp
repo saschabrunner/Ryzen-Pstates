@@ -60,7 +60,7 @@ bool PowerState::setFid(uint8_t fid)
 {
 	if (fid > FID_MAX || fid < FID_MIN) {
 		std::cerr << "Requested FID '" << +fid << "' out of bounds "
-			"(must be between " << +FID_MIN << " and " << +FID_MAX << ")." << std::endl;
+			"(must be between " << +FID_MIN << " and " << +FID_MAX << ")" << std::endl;
 		return false;
 	}
 
@@ -72,7 +72,7 @@ bool PowerState::setDid(uint8_t did)
 {
 	if (did > DID_MAX || did < DID_MIN) {
 		std::cerr << "Requested DID '" << +did << "' out of bounds "
-			"(must be between " << +DID_MIN << " and " << +DID_MAX << ")." << std::endl;
+			"(must be between " << +DID_MIN << " and " << +DID_MAX << ")" << std::endl;
 		return false;
 	}
 
@@ -84,7 +84,7 @@ bool PowerState::setVid(uint8_t vid)
 {
 	if (vid > VID_MAX || vid < VID_MIN) {
 		std::cerr << "Requested VID '" << +vid << "' out of bounds "
-			"(must be between " << +VID_MIN << " and " << +VID_MAX << ")." << std::endl;
+			"(must be between " << +VID_MIN << " and " << +VID_MAX << ")" << std::endl;
 		return false;
 	}
 

@@ -83,10 +83,12 @@ xcopy /y /d  "$(ProjectDir)external\WinRing0x64.sys" "$(TargetDir)"</Command>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Cpuid.cpp" />
     <ClCompile Include="src\PowerState.cpp" />
     <ClCompile Include="src\Main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Cpuid.h" />
     <ClInclude Include="src\PowerState.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
