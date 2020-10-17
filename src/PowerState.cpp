@@ -102,6 +102,11 @@ void PowerState::print()
 		<< "\nVCore (V): " << calculateVcore() << std::endl;
 }
 
+uint64_t PowerState::getPstate() const
+{
+	return pstate;
+}
+
 void PowerState::setBits(uint8_t value, uint8_t length, uint8_t offset) {
 	// example:
 	// pstate = 10010110

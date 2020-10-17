@@ -23,14 +23,15 @@ public:
 	bool setVid(uint8_t vid);
 
 	void print();
+	uint64_t getPstate() const;
 
 	// some sane limits for all the values
-	static constexpr uint8_t FID_MIN{ 16 };
-	static constexpr uint8_t FID_MAX{ 255 };
-	static constexpr uint8_t DID_MIN{ 8 };
-	static constexpr uint8_t DID_MAX{ 44 };
-	static constexpr uint8_t VID_MIN{ 32 }; // 1.35V
-	static constexpr uint8_t VID_MAX{ 168 }; // 0.5V
+	static constexpr uint8_t FID_MIN{ 0x10 };
+	static constexpr uint8_t FID_MAX{ 0xFF };
+	static constexpr uint8_t DID_MIN{ 0x08 };
+	static constexpr uint8_t DID_MAX{ 0x1A }; // some higher dividers are reserved
+	static constexpr uint8_t VID_MIN{ 0x20 }; // 1.35V
+	static constexpr uint8_t VID_MAX{ 0xA8 }; // 0.5V
 
 private:
 	uint64_t pstate;
