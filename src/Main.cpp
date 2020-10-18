@@ -79,24 +79,25 @@ int initWinRing0()
 		break;
 	case OLS_DLL_UNSUPPORTED_PLATFORM:
 		std::cerr << "WinRing0: DLL - unsupported platform" << std::endl;
-		break;
+		return -1;
 	case OLS_DLL_DRIVER_NOT_LOADED:
 		std::cerr << "WinRing0: DLL - driver not loaded" << std::endl;
-		break;
+		return -1;
 	case OLS_DLL_DRIVER_NOT_FOUND:
 		std::cerr << "WinRing0: DLL - driver not found" << std::endl;
-		break;
+		return -1;
 	case OLS_DLL_DRIVER_UNLOADED:
 		std::cerr << "WinRing0: DLL - driver unloaded by another process" << std::endl;
-		break;
+		return -1;
 	case OLS_DLL_DRIVER_NOT_LOADED_ON_NETWORK:
 		std::cerr << "WinRing0: DLL - running from network share, driver can't be loaded" << std::endl;
-		break;
+		return -1;
 	case OLS_DLL_UNKNOWN_ERROR:
 		std::cerr << "WinRing0: DLL - unknown error" << std::endl;
-		break;
+		return -1;
 	default:
-		break;
+		std::cerr << "WinRing0: DLL - unknown dll status code '" << dllStatus << "'";
+		return -1;
 	}
 
 	return 0;
