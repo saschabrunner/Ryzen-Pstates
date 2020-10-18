@@ -2,6 +2,7 @@
 #include <exception>
 #include <iostream>
 #include <optional>
+#include <thread>
 
 #include <Windows.h>
 #include "lib/OlsApi.h"
@@ -34,7 +35,8 @@ struct Params
 // prototypes
 int initWinRing0();
 Params parseArguments(int argc, char* argv[]);
-void updatePstate(const Params& params);
+void updatePstate(const Params& params, int numThreads);
+int getNumberOfHardwareThreads();
 
 int main(int argc, char* argv[]) {
 	int ret = initWinRing0();
@@ -43,11 +45,12 @@ int main(int argc, char* argv[]) {
 		return ret;
 	}
 
+	int numThreads = getNumberOfHardwareThreads();
 	Params params = parseArguments(argc, argv);
 
 	try
 	{
-		updatePstate(params);
+		updatePstate(params, numThreads);
 	}
 	catch (const std::exception& e)
 	{
@@ -155,7 +158,7 @@ Params parseArguments(int argc, char* argv[])
 	return params;
 }
 
-void updatePstate(const Params& params)
+void updatePstate(const Params& params, int numThreads)
 {
 	DWORD eax;
 	DWORD edx;
@@ -192,12 +195,44 @@ void updatePstate(const Params& params)
 	edx = pstateVal >> 32;
 
 	// according to register reference, this msr needs to be set for every thread
-	// note: 8 threads are assumed, less actual threads shouldn't break anything
+	// we create a thread affinity mask for all the threads on the system, and then
+	// loop and set the msr with a separate mask for each individual thread
+	DWORD_PTR maxMask = -1; // initialize all bits to one
+
+	// shift bits to represent actual number of threads in system
+	maxMask = maxMask >> (sizeof(DWORD_PTR) * 8 - numThreads);
+
+	// affinity mask for one thread each
 	DWORD_PTR mask = 0x1;
+
 	while (mask < 0xFF) {
 		WrmsrTx(PSTATES[params.pstate], eax, edx, mask);
 		mask = mask << 1;
 	}
 
 	std::cout << "Pstate updated" << std::endl;
+}
+
+int getNumberOfHardwareThreads()
+{
+	int numHardwareThreads = std::thread::hardware_concurrency();
+
+	if (numHardwareThreads == 0)
+	{
+		throw std::runtime_error("The number of hardware threads could not be determined");
+	}
+
+	std::cout << "Detected " << numHardwareThreads << "hardware threads on CPU" << std::endl;
+
+	// check if we have more threads than we can mask with the size of DWORD_PTR
+	if (numHardwareThreads > sizeof(DWORD_PTR) * 8)
+	{
+		// with so many threads, windows probably has multiple processor groups
+		// https://docs.microsoft.com/en-us/windows/win32/procthread/processor-groups
+		// this would need additional code to implement, since WinRing0 uses SetThreadAffinityMask,
+		// which can't change processor groups and we need to set pstates on every thread
+		throw std::runtime_error("The number of hardware threads is too high, this is not yet supported");
+	}
+
+	return numHardwareThreads;
 }
