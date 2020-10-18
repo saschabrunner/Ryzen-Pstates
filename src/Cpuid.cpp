@@ -14,7 +14,6 @@
 // constants
 constexpr char CPU_MANUFACTURER_AMD[]{ "AuthenticAMD" };
 constexpr unsigned int CPU_FAMILY_ZEN{ 0x17 };
-constexpr unsigned int CPU_MODEL_RAVEN_RIDGE{ 0x11 };
 
 // prototypes
 static void cpuid(int registers[4], int level);
@@ -52,11 +51,6 @@ bool validateCpu()
 
 	if (family != CPU_FAMILY_ZEN) {
 		std::cerr << "CPU is not AMD Zen" << std::endl;
-		return false;
-	}
-
-	if (model != CPU_MODEL_RAVEN_RIDGE) {
-		std::cerr << "CPU is not AMD Raven Ridge" << std::endl;
 		return false;
 	}
 
