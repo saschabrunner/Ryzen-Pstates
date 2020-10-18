@@ -1,0 +1,3 @@
+[submodule "src/lib/argh"]
+	path = src/lib/argh
+	url = https://github.com/adishavit/argh.git

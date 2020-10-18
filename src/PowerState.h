@@ -18,9 +18,9 @@ public:
 	double calculateFrequency() const;
 	static double calculateFrequency(uint8_t fid, uint8_t did);
 
-	bool setFid(unsigned int fid);
-	bool setDid(unsigned int did);
-	bool setVid(unsigned int vid);
+	void setFid(unsigned int fid);
+	void setDid(unsigned int did);
+	void setVid(unsigned int vid);
 
 	void print() const;
 	uint64_t getPstate() const;

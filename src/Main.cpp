@@ -1,48 +1,57 @@
 ﻿#include <cstdint>
+#include <exception>
 #include <iostream>
+#include <optional>
 
 #include <Windows.h>
 #include "lib/OlsApi.h"
 #include "lib/OlsDef.h"
+#include "lib/argh/argh.h"
 
 #include "Cpuid.h"
 #include "PowerState.h"
 
-#include <bitset>
+static constexpr unsigned int PSTATES[]
+{
+	0xC0010064,
+	0xC0010065,
+	0xC0010066,
+	0xC0010067,
+	0xC0010068,
+	0xC0010069,
+	0xC001006A,
+	0xC001006B
+};
 
-static constexpr unsigned int PSTATE_P0{ 0xC0010064 };
-static constexpr unsigned int PSTATE_P1{ 0xC0010065 };
-static constexpr unsigned int PSTATE_P2{ 0xC0010066 };
+struct Params
+{
+	unsigned int pstate{ UINT_MAX };
+	std::optional<unsigned int> fid;
+	std::optional<unsigned int> did;
+	std::optional<unsigned int> vid;
+};
 
 // prototypes
 int initWinRing0();
+Params parseArguments(int argc, char* argv[]);
+void updatePstate(const Params& params);
 
-int main() {
+int main(int argc, char* argv[]) {
 	int ret = initWinRing0();
 	if (ret)
 	{
 		return ret;
 	}
 
-	DWORD eax;
-	DWORD edx;
-	Rdmsr(PSTATE_P1, &eax, &edx);
+	Params params = parseArguments(argc, argv);
 
-	uint64_t pstate = eax | ((uint64_t)edx << 32);
-	PowerState powerState(pstate);
-
-	// set fid to 100 for testing
-	powerState.setFid(100);
-
-	pstate = powerState.getPstate();
-	eax = pstate & 0xFFFFFFFF;
-	edx = pstate >> 32;
-
-	// according to register reference, this msr needs to be set for every thread
-	DWORD_PTR mask = 0x1;
-	while (mask < 0xFF) {
-		WrmsrTx(PSTATE_P1, eax, edx, mask);
-		mask = mask << 1;
+	try
+	{
+		updatePstate(params);
+	}
+	catch (const std::exception& e)
+	{
+		std::cerr << e.what() << "\nExiting..." << std::endl;
 	}
 
 	DeinitializeOls();
@@ -91,4 +100,103 @@ int initWinRing0()
 	}
 
 	return 0;
+}
+
+Params parseArguments(int argc, char* argv[])
+{
+	argh::parser argParser(argc, argv);
+
+	Params params;
+
+	// PState
+	auto curArg = argParser({ "-p", "--pstate" });
+	if (curArg)
+	{
+		curArg >> params.pstate;
+		if (params.pstate > 7) {
+			std::cerr << "Pstate must be between 0 and 7" << std::endl;
+			exit(-1);
+		}
+	}
+	else
+	{
+		std::cerr << "Required parameter --pstate (-p) missing" << std::endl;
+		exit(-1);
+	}
+
+	// FID
+	curArg = argParser({ "-f", "--fid" });
+	if (curArg)
+	{
+		unsigned int temp;
+		curArg >> temp;
+		params.fid = std::optional<unsigned int>(temp);
+	}
+
+	// DID
+	curArg = argParser({ "-d", "--did" });
+	if (curArg)
+	{
+		unsigned int temp;
+		curArg >> temp;
+		params.did = std::optional<unsigned int>(temp);
+	}
+
+	// FID
+	curArg = argParser({ "-v", "--vid" });
+	if (curArg)
+	{
+		unsigned int temp;
+		curArg >> temp;
+		params.vid = std::optional<unsigned int>(temp);
+	}
+
+	return params;
+}
+
+void updatePstate(const Params& params)
+{
+	DWORD eax;
+	DWORD edx;
+	Rdmsr(PSTATES[params.pstate], &eax, &edx);
+
+	uint64_t pstateVal = eax | ((uint64_t)edx << 32);
+	PowerState powerState(pstateVal);
+
+	std::cout << "Current pstate:" << std::endl;
+	powerState.print();
+	std::cout << "--------------------------------------------------" << std::endl;
+
+	if (params.fid)
+	{
+		powerState.setFid(*params.fid);
+	}
+
+	if (params.did)
+	{
+		powerState.setDid(*params.did);
+	}
+
+	if (params.vid)
+	{
+		powerState.setVid(*params.vid);
+	}
+
+	std::cout << "New pstate:" << std::endl;
+	powerState.print();
+	std::cout << "--------------------------------------------------" << std::endl;
+
+	pstateVal = powerState.getPstate();
+	eax = pstateVal & 0xFFFFFFFF;
+	edx = pstateVal >> 32;
+
+	// according to register reference, this msr needs to be set for every thread
+	// note: 8 threads are assumed, less actual threads shouldn't break anything
+	DWORD_PTR mask = 0x1;
+	while (mask < 0xFF) {
+		WrmsrTx(PSTATES[params.pstate], eax, edx, mask);
+		mask = mask << 1;
+	}
+
+	std::cout << "Pstate updated" << std::endl;
 }

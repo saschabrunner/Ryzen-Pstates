@@ -1,10 +1,17 @@
 ﻿#include "PowerState.h"
 
 #include <iostream>
+#include <sstream>
+#include <stdexcept>
 
 PowerState::PowerState(uint64_t pstate)
 	:pstate(pstate)
 {
+	// msb determines if pstate is valid
+	bool pstateEnabled = pstate >> 63 & 0x1;
+	if (!pstateEnabled) {
+		throw std::invalid_argument("Selected pstate is not enabled on this chip");
+	}
 }
 
 PowerState::~PowerState()
@@ -56,40 +63,40 @@ double PowerState::calculateFrequency(uint8_t fid, uint8_t did)
 	return calculateRatio(fid, did) * 100;
 }
 
-bool PowerState::setFid(unsigned int fid)
+void PowerState::setFid(unsigned int fid)
 {
 	if (fid > FID_MAX || fid < FID_MIN) {
-		std::cerr << "Requested FID '" << +fid << "' out of bounds "
-			"(must be between " << +FID_MIN << " and " << +FID_MAX << ")" << std::endl;
-		return false;
+		std::ostringstream errorMessage;
+		errorMessage << "Requested FID '" << fid << "' out of bounds "
+			"(must be between " << +FID_MIN << " and " << +FID_MAX << ")";
+		throw std::invalid_argument(errorMessage.str());
 	}
 
 	setBits(fid, 8, 0);
-	return true;
 }
 
-bool PowerState::setDid(unsigned int did)
+void PowerState::setDid(unsigned int did)
 {
 	if (did > DID_MAX || did < DID_MIN) {
-		std::cerr << "Requested DID '" << +did << "' out of bounds "
-			"(must be between " << +DID_MIN << " and " << +DID_MAX << ")" << std::endl;
-		return false;
+		std::ostringstream errorMessage;
+		errorMessage << "Requested DID '" << did << "' out of bounds "
+			"(must be between " << +DID_MIN << " and " << +DID_MAX << ")";
+		throw std::invalid_argument(errorMessage.str());
 	}
 
 	setBits(did, 6, 8);
-	return true;
 }
 
-bool PowerState::setVid(unsigned int vid)
+void PowerState::setVid(unsigned int vid)
 {
 	if (vid > VID_MAX || vid < VID_MIN) {
-		std::cerr << "Requested VID '" << +vid << "' out of bounds "
-			"(must be between " << +VID_MIN << " and " << +VID_MAX << ")" << std::endl;
-		return false;
+		std::ostringstream errorMessage;
+		errorMessage << "Requested VID '" << vid << "' out of bounds "
+			"(must be between " << +VID_MIN << " and " << +VID_MAX << ")";
+		throw std::invalid_argument(errorMessage.str());
 	}
 
 	setBits(vid, 8, 14);
-	return true;
 }
 
 void PowerState::print() const
