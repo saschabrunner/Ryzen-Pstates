@@ -56,7 +56,7 @@ double PowerState::calculateFrequency(uint8_t fid, uint8_t did)
 	return calculateRatio(fid, did) * 100;
 }
 
-bool PowerState::setFid(uint8_t fid)
+bool PowerState::setFid(unsigned int fid)
 {
 	if (fid > FID_MAX || fid < FID_MIN) {
 		std::cerr << "Requested FID '" << +fid << "' out of bounds "
@@ -68,7 +68,7 @@ bool PowerState::setFid(uint8_t fid)
 	return true;
 }
 
-bool PowerState::setDid(uint8_t did)
+bool PowerState::setDid(unsigned int did)
 {
 	if (did > DID_MAX || did < DID_MIN) {
 		std::cerr << "Requested DID '" << +did << "' out of bounds "
@@ -80,7 +80,7 @@ bool PowerState::setDid(uint8_t did)
 	return true;
 }
 
-bool PowerState::setVid(uint8_t vid)
+bool PowerState::setVid(unsigned int vid)
 {
 	if (vid > VID_MAX || vid < VID_MIN) {
 		std::cerr << "Requested VID '" << +vid << "' out of bounds "
@@ -92,7 +92,7 @@ bool PowerState::setVid(uint8_t vid)
 	return true;
 }
 
-void PowerState::print()
+void PowerState::print() const
 {
 	std::cout << "FID: " << +getFid()
 		<< "\nDID: " << +getDid()

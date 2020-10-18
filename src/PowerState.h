@@ -18,11 +18,11 @@ public:
 	double calculateFrequency() const;
 	static double calculateFrequency(uint8_t fid, uint8_t did);
 
-	bool setFid(uint8_t fid);
-	bool setDid(uint8_t did);
-	bool setVid(uint8_t vid);
+	bool setFid(unsigned int fid);
+	bool setDid(unsigned int did);
+	bool setVid(unsigned int vid);
 
-	void print();
+	void print() const;
 	uint64_t getPstate() const;
 
 	// some sane limits for all the values
