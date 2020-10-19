@@ -12,20 +12,9 @@
 #include "Cpuid.h"
 #include "PowerState.h"
 
-static constexpr unsigned int PSTATES[]
-{
-	0xC0010064,
-	0xC0010065,
-	0xC0010066,
-	0xC0010067,
-	0xC0010068,
-	0xC0010069,
-	0xC001006A,
-	0xC001006B
-};
-
 struct Params
 {
+	bool dryRun{ false };
 	unsigned int pstate{ UINT_MAX };
 	std::optional<unsigned int> fid;
 	std::optional<unsigned int> did;
@@ -37,6 +26,7 @@ int initWinRing0();
 Params parseArguments(int argc, char* argv[]);
 void printUsage();
 void updatePstate(const Params& params, int numThreads);
+void applyPstate(const PowerState& powerState, int numThreads);
 int getNumberOfHardwareThreads();
 
 int main(int argc, char* argv[]) {
@@ -118,6 +108,8 @@ Params parseArguments(int argc, char* argv[])
 	argh::parser argParser(argc, argv);
 	Params params;
 
+	params.dryRun = argParser["--dry-run"];
+
 	// PState
 	auto curArg = argParser({ "-p", "--pstate" });
 	if (curArg)
@@ -172,7 +164,8 @@ void printUsage()
 		<< "-p, --pstate	Required, Selects PState to change (0 - 7)\n"
 		<< "-f, --fid	New FID to set (" << +PowerState::FID_MIN << " - " << +PowerState::FID_MAX << ")\n"
 		<< "-d, --did	New DID to set (" << +PowerState::DID_MIN << " - " << +PowerState::DID_MAX << ")\n"
-		<< "-v, --vid	New VID to set (" << +PowerState::VID_MIN << " - " << +PowerState::VID_MAX << ")\n\n"
+		<< "-v, --vid	New VID to set (" << +PowerState::VID_MIN << " - " << +PowerState::VID_MAX << ")\n"
+		<< "--dry-run	Only display current and calculated new pstate, but don't apply it\n\n"
 		<< "Example: ryzen_pstates -p=1 -f=102 -d=12 -v=96" << std::endl;
 }
 
@@ -180,10 +173,10 @@ void updatePstate(const Params& params, int numThreads)
 {
 	DWORD eax;
 	DWORD edx;
-	Rdmsr(PSTATES[params.pstate], &eax, &edx);
+	Rdmsr(PowerState::getRegister(params.pstate), &eax, &edx);
 
 	uint64_t pstateVal = eax | ((uint64_t)edx << 32);
-	PowerState powerState(pstateVal);
+	PowerState powerState(params.pstate, pstateVal);
 
 	std::cout << "Current pstate:" << std::endl;
 	powerState.print();
@@ -208,9 +201,16 @@ void updatePstate(const Params& params, int numThreads)
 	powerState.print();
 	std::cout << "--------------------------------------------------" << std::endl;
 
-	pstateVal = powerState.getPstate();
-	eax = pstateVal & 0xFFFFFFFF;
-	edx = pstateVal >> 32;
+	if (!params.dryRun) {
+		applyPstate(powerState, numThreads);
+	}
+}
+
+void applyPstate(const PowerState& powerState, int numThreads)
+{
+	uint64_t pstateVal = powerState.getValue();
+	DWORD eax = pstateVal & 0xFFFFFFFF;
+	DWORD edx = pstateVal >> 32;
 
 	// according to register reference, this msr needs to be set for every thread
 	// we create a thread affinity mask for all the threads on the system, and then
@@ -224,7 +224,7 @@ void updatePstate(const Params& params, int numThreads)
 	DWORD_PTR mask = 0x1;
 
 	while (mask < 0xFF) {
-		WrmsrTx(PSTATES[params.pstate], eax, edx, mask);
+		WrmsrTx(powerState.getRegister(), eax, edx, mask);
 		mask = mask << 1;
 	}
 
@@ -240,7 +240,7 @@ int getNumberOfHardwareThreads()
 		throw std::runtime_error("The number of hardware threads could not be determined");
 	}
 
-	std::cout << "Detected " << numHardwareThreads << "hardware threads on CPU" << std::endl;
+	std::cout << "Detected " << numHardwareThreads << " hardware threads on CPU" << std::endl;
 
 	// check if we have more threads than we can mask with the size of DWORD_PTR
 	if (numHardwareThreads > sizeof(DWORD_PTR) * 8)

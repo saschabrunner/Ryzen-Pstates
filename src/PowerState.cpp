@@ -4,13 +4,18 @@
 #include <sstream>
 #include <stdexcept>
 
-PowerState::PowerState(uint64_t pstate)
-	:pstate(pstate)
+PowerState::PowerState(int pstate, uint64_t value)
+	:pstate(pstate), value(value)
 {
 	// msb determines if pstate is valid
-	bool pstateEnabled = pstate >> 63 & 0x1;
+	bool pstateEnabled = value >> 63 & 0x1;
 	if (!pstateEnabled) {
 		throw std::invalid_argument("Selected pstate is not enabled on this chip");
+	}
+
+	if (pstate < 0 || pstate > 7)
+	{
+		throw std::invalid_argument("Pstate must be between 0 and 7");
 	}
 }
 
@@ -18,19 +23,38 @@ PowerState::~PowerState()
 {
 }
 
+int PowerState::getPstate() const
+{
+	return pstate;
+}
+
+unsigned int PowerState::getRegister() const
+{
+	return getRegister(pstate);
+}
+
+unsigned int PowerState::getRegister(int pstate)
+{
+	if (pstate < 0 || pstate > 7)
+	{
+		throw std::invalid_argument("Pstate must be between 0 and 7");
+	}
+	return REGISTERS[pstate];
+}
+
 uint8_t PowerState::getFid() const
 {
-	return pstate & 0xff;
+	return value & 0xff;
 }
 
 uint8_t PowerState::getDid() const
 {
-	return (pstate & 0x3f00) >> 8;
+	return (value & 0x3f00) >> 8;
 }
 
 uint8_t PowerState::getVid() const
 {
-	return (uint8_t)((pstate & 0x3fc000) >> 14);
+	return (uint8_t)((value & 0x3fc000) >> 14);
 }
 
 double PowerState::calculateRatio() const
@@ -109,22 +133,22 @@ void PowerState::print() const
 		<< "\nVCore (V): " << calculateVcore() << std::endl;
 }
 
-uint64_t PowerState::getPstate() const
+uint64_t PowerState::getValue() const
 {
-	return pstate;
+	return value;
 }
 
-void PowerState::setBits(uint8_t value, uint8_t length, uint8_t offset) {
+void PowerState::setBits(uint8_t newBits, uint8_t length, uint8_t offset) {
 	// example:
-	// pstate = 10010110
-	// value = 10
+	// value = 10010110
+	// newBits = 10
 	// length = 2
 	// offset = 4
 	// (1 << length) = 00000011
 	// ((1 << length) - 1) << offset) = 00110000
-	// (pstate & ((1 << length) - 1) << offset) = 00010000
-	// (pstate ^ (pstate & ((1 << length) - 1) << offset)) = 10000110
-	// (value << offset) = 00100000
-	// (pstate ^ (pstate & ((1 << length) - 1) << offset)) + (value << offset) = 10100110
-	pstate = (pstate ^ (pstate & (((uint64_t)1 << length) - 1) << offset)) + ((uint64_t)value << offset);
+	// (value & ((1 << length) - 1) << offset) = 00010000
+	// (value ^ (value & ((1 << length) - 1) << offset)) = 10000110
+	// (newBits << offset) = 00100000
+	// (value ^ (value & ((1 << length) - 1) << offset)) + (newBits << offset) = 10100110
+	value = (value ^ (value & (((uint64_t)1 << length) - 1) << offset)) + ((uint64_t)newBits << offset);
 }

@@ -4,9 +4,12 @@
 class PowerState
 {
 public:
-	PowerState(uint64_t pstate);
+	PowerState(int pstate, uint64_t value);
 	virtual ~PowerState();
 
+	int getPstate() const;
+	unsigned int getRegister() const;
+	static unsigned int getRegister(int pstate);
 	uint8_t getFid() const;
 	uint8_t getDid() const;
 	uint8_t getVid() const;
@@ -23,7 +26,7 @@ public:
 	void setVid(unsigned int vid);
 
 	void print() const;
-	uint64_t getPstate() const;
+	uint64_t getValue() const;
 
 	// some sane limits for all the values
 	static constexpr uint8_t FID_MIN{ 0x10 };
@@ -34,7 +37,20 @@ public:
 	static constexpr uint8_t VID_MAX{ 0xA8 }; // 0.5V
 
 private:
-	uint64_t pstate;
+	int pstate;
+	uint64_t value;
 
 	void setBits(uint8_t value, uint8_t length, uint8_t offset);
+
+	static constexpr unsigned int REGISTERS[]
+	{
+		0xC0010064,
+		0xC0010065,
+		0xC0010066,
+		0xC0010067,
+		0xC0010068,
+		0xC0010069,
+		0xC001006A,
+		0xC001006B
+	};
 };
