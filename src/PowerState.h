@@ -30,7 +30,7 @@ public:
 	static constexpr uint8_t FID_MAX{ 0xFF };
 	static constexpr uint8_t DID_MIN{ 0x08 };
 	static constexpr uint8_t DID_MAX{ 0x1A }; // some higher dividers are reserved
-	static constexpr uint8_t VID_MIN{ 0x20 }; // 1.35V
+	static constexpr uint8_t VID_MIN{ 0x20 }; // 1.35V, could be changed to 0 to unlock higher limits
 	static constexpr uint8_t VID_MAX{ 0xA8 }; // 0.5V
 
 private:

@@ -35,6 +35,7 @@ struct Params
 // prototypes
 int initWinRing0();
 Params parseArguments(int argc, char* argv[]);
+void printUsage();
 void updatePstate(const Params& params, int numThreads);
 int getNumberOfHardwareThreads();
 
@@ -108,8 +109,13 @@ int initWinRing0()
 
 Params parseArguments(int argc, char* argv[])
 {
-	argh::parser argParser(argc, argv);
+	if (argc == 1)
+	{
+		printUsage();
+		exit(-1);
+	}
 
+	argh::parser argParser(argc, argv);
 	Params params;
 
 	// PState
@@ -119,12 +125,14 @@ Params parseArguments(int argc, char* argv[])
 		curArg >> params.pstate;
 		if (params.pstate > 7) {
 			std::cerr << "Pstate must be between 0 and 7" << std::endl;
+			printUsage();
 			exit(-1);
 		}
 	}
 	else
 	{
 		std::cerr << "Required parameter --pstate (-p) missing" << std::endl;
+		printUsage();
 		exit(-1);
 	}
 
@@ -156,6 +164,16 @@ Params parseArguments(int argc, char* argv[])
 	}
 
 	return params;
+}
+
+void printUsage()
+{
+	std::cout << "Options:\n"
+		<< "-p, --pstate	Required, Selects PState to change (0 - 7)\n"
+		<< "-f, --fid	New FID to set (" << +PowerState::FID_MIN << " - " << +PowerState::FID_MAX << ")\n"
+		<< "-d, --did	New DID to set (" << +PowerState::DID_MIN << " - " << +PowerState::DID_MAX << ")\n"
+		<< "-v, --vid	New VID to set (" << +PowerState::VID_MIN << " - " << +PowerState::VID_MAX << ")\n\n"
+		<< "Example: ryzen_pstates -p=1 -f=102 -d=12 -v=96" << std::endl;
 }
 
 void updatePstate(const Params& params, int numThreads)
