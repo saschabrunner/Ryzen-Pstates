@@ -12,6 +12,8 @@
 #include "Cpuid.h"
 #include "PowerState.h"
 
+static constexpr unsigned int HWCONF_REGISTER{ 0xC0010015 };
+
 struct Params
 {
 	bool dryRun{ false };
@@ -27,6 +29,7 @@ Params parseArguments(int argc, char* argv[]);
 void printUsage();
 void updatePstate(const Params& params, int numThreads);
 void applyPstate(const PowerState& powerState, int numThreads);
+void lockTsc(DWORD_PTR mask);
 int getNumberOfHardwareThreads();
 
 int main(int argc, char* argv[]) {
@@ -223,12 +226,34 @@ void applyPstate(const PowerState& powerState, int numThreads)
 	// affinity mask for one thread each
 	DWORD_PTR mask = 0x1;
 
-	while (mask < 0xFF) {
+	// if we change pstate 0, we have to lock the TSC frequency, otherwise
+	// the system will get very confused and unstable
+	if (powerState.getPstate() == 0)
+	{
+		std::cout << "Info: TSC frequency will be locked to current pstate 0 frequency"
+			"to avoid issues" << std::endl;
+		while (mask < maxMask) {
+			lockTsc(mask);
+			mask = mask << 1;
+		}
+		mask = 0x1;
+	}
+
+	while (mask < maxMask) {
 		WrmsrTx(powerState.getRegister(), eax, edx, mask);
 		mask = mask << 1;
 	}
 
 	std::cout << "Pstate updated" << std::endl;
+}
+
+void lockTsc(DWORD_PTR mask)
+{
+	DWORD eax;
+	DWORD edx;
+	RdmsrTx(HWCONF_REGISTER, &eax, &edx, mask);
+	eax = eax | (1 << 21); // set bit 21 (LockTscToCurrentP0) to true
+	WrmsrTx(HWCONF_REGISTER, eax, edx, mask);
 }
 
 int getNumberOfHardwareThreads()
