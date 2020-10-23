@@ -230,7 +230,7 @@ void applyPstate(const PowerState& powerState, int numThreads)
 	// the system will get very confused and unstable
 	if (powerState.getPstate() == 0)
 	{
-		std::cout << "Info: TSC frequency will be locked to current pstate 0 frequency"
+		std::cout << "Info: TSC frequency will be locked to current pstate 0 frequency "
 			"to avoid issues" << std::endl;
 		while (mask < maxMask) {
 			lockTsc(mask);
